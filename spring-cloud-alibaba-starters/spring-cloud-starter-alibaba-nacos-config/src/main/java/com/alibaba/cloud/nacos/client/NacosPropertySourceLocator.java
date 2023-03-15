@@ -75,6 +75,7 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 	@Override
 	public PropertySource<?> locate(Environment env) {
 		nacosConfigProperties.setEnvironment(env);
+		// 获取配置服务器实例，这是 Nacos 客户端提供的用于访问实现配置中心基本操作的类
 		ConfigService configService = nacosConfigManager.getConfigService();
 
 		if (null == configService) {
@@ -98,8 +99,11 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 		CompositePropertySource composite = new CompositePropertySource(
 				NACOS_PROPERTY_SOURCE_NAME);
 
+		// 加载共享配置
 		loadSharedConfiguration(composite);
+		// 加载扩展配置配置
 		loadExtConfiguration(composite);
+		// 加载应用配置
 		loadApplicationConfiguration(composite, dataIdPrefix, nacosConfigProperties, env);
 		return composite;
 	}
@@ -146,6 +150,7 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 		// Loaded with profile, which have a higher priority than the suffix
 		for (String profile : environment.getActiveProfiles()) {
 			String dataId = dataIdPrefix + SEP1 + profile + DOT + fileExtension;
+			// 从 nacos 加载数据
 			loadNacosDataIfPresent(compositePropertySource, dataId, nacosGroup,
 					fileExtension, true);
 		}
