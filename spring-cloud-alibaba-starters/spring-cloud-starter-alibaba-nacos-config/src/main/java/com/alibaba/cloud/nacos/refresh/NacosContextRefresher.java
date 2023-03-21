@@ -71,16 +71,22 @@ public class NacosContextRefresher
 
 	public NacosContextRefresher(NacosConfigManager nacosConfigManager,
 			NacosRefreshHistory refreshHistory) {
+		// 获取配置属性信息
 		this.nacosConfigProperties = nacosConfigManager.getNacosConfigProperties();
+		// 刷新历史
 		this.nacosRefreshHistory = refreshHistory;
+		// 获取配置服务
 		this.configService = nacosConfigManager.getConfigService();
+		// 是否开启刷新，是true
 		this.isRefreshEnabled = this.nacosConfigProperties.isRefreshEnabled();
 	}
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
 		// many Spring context
+		// 这是一个 CAS 操作，只设置一次
 		if (this.ready.compareAndSet(false, true)) {
+			// 注册 Nacos 监听器对于应用
 			this.registerNacosListenersForApplications();
 		}
 	}
@@ -94,27 +100,36 @@ public class NacosContextRefresher
 	 * register Nacos Listeners.
 	 */
 	private void registerNacosListenersForApplications() {
+		// 默认是 true
 		if (isRefreshEnabled()) {
+			// 遍历Nacos属性资源中心
 			for (NacosPropertySource propertySource : NacosPropertySourceRepository
 					.getAll()) {
 				if (!propertySource.isRefreshable()) {
 					continue;
 				}
+				// 获取资源ID
 				String dataId = propertySource.getDataId();
+				// 通过组和 dataId 注册 Nacos 监听器
 				registerNacosListener(propertySource.getGroup(), dataId);
 			}
 		}
 	}
 
 	private void registerNacosListener(final String groupKey, final String dataKey) {
+		// 构建 Key 信息
 		String key = NacosPropertySourceRepository.getMapKey(dataKey, groupKey);
+		// 在 listenerMap中放入了 key 对应 AbstractSharedListener 响应的方法
 		Listener listener = listenerMap.computeIfAbsent(key,
 				lst -> new AbstractSharedListener() {
 					@Override
 					public void innerReceive(String dataId, String group,
 							String configInfo) {
+						// 刷新次数
 						refreshCountIncrement();
+						// 记录刷新历史，就是改变历史
 						nacosRefreshHistory.addRefreshRecord(dataId, group, configInfo);
+						// 发布刷新事件
 						applicationContext.publishEvent(
 								new RefreshEvent(this, null, "Refresh Nacos config"));
 						if (log.isDebugEnabled()) {
@@ -125,6 +140,7 @@ public class NacosContextRefresher
 					}
 				});
 		try {
+			// 向配置服务中添加监听器
 			configService.addListener(dataKey, groupKey, listener);
 			log.info("[Nacos Config] Listening config: dataId={}, group={}", dataKey,
 					groupKey);

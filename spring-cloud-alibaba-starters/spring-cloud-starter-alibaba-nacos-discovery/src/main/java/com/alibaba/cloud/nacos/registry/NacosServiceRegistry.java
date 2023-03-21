@@ -60,18 +60,25 @@ public class NacosServiceRegistry implements ServiceRegistry<Registration> {
 	@Override
 	public void register(Registration registration) {
 
+		// 如果注册实例信息中的服务ID 是空的那么就不是有效的服务实例，不允许注册
+		// service-provider
 		if (StringUtils.isEmpty(registration.getServiceId())) {
 			log.warn("No service to register for nacos client...");
 			return;
 		}
 
+		// 获取名称空间
 		NamingService namingService = namingService();
+		// 获取注册项目的服务 ID ：service-provider
 		String serviceId = registration.getServiceId();
+		// 获取名称空间的组信息 DEFAULT_GROUP
 		String group = nacosDiscoveryProperties.getGroup();
 
+		// 构建实例信息
 		Instance instance = getNacosInstanceFromRegistration(registration);
 
 		try {
+			// 进行服务实例注册
 			namingService.registerInstance(serviceId, group, instance);
 			log.info("nacos registry, {} {} {}:{} register finished", group, serviceId,
 					instance.getIp(), instance.getPort());
@@ -99,10 +106,14 @@ public class NacosServiceRegistry implements ServiceRegistry<Registration> {
 			return;
 		}
 
+		// 获取命名空间
 		NamingService namingService = namingService();
+		// 获取注册中心服务的ID
 		String serviceId = registration.getServiceId();
+		// 获取组，默认就是 default
 		String group = nacosDiscoveryProperties.getGroup();
 
+		// 通过 namingService 进行客户端实例下线
 		try {
 			namingService.deregisterInstance(serviceId, group, registration.getHost(),
 					registration.getPort(), nacosDiscoveryProperties.getClusterName());
@@ -118,6 +129,7 @@ public class NacosServiceRegistry implements ServiceRegistry<Registration> {
 	@Override
 	public void close() {
 		try {
+			// nacos 服务管理下线
 			nacosServiceManager.nacosServiceShutDown();
 		}
 		catch (NacosException e) {
@@ -177,19 +189,33 @@ public class NacosServiceRegistry implements ServiceRegistry<Registration> {
 		return null;
 	}
 
+	/**
+	 * 构建实例信息
+	 *
+	 * @param registration
+	 * @return
+	 */
 	private Instance getNacosInstanceFromRegistration(Registration registration) {
 		Instance instance = new Instance();
+		// ip设置
 		instance.setIp(registration.getHost());
+		// 端口设置
 		instance.setPort(registration.getPort());
+		// 权重设置
 		instance.setWeight(nacosDiscoveryProperties.getWeight());
+		// 集群名称
 		instance.setClusterName(nacosDiscoveryProperties.getClusterName());
+		// 是否开启
 		instance.setEnabled(nacosDiscoveryProperties.isInstanceEnabled());
+		// 元数据
 		instance.setMetadata(registration.getMetadata());
 		instance.setEphemeral(nacosDiscoveryProperties.isEphemeral());
+		// 返回实例
 		return instance;
 	}
 
 	private NamingService namingService() {
+		// 根据提供的nacos属性值进行命名空间信息获取
 		return nacosServiceManager.getNamingService();
 	}
 

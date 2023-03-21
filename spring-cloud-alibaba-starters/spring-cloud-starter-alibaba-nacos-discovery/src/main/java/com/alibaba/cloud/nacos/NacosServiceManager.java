@@ -114,6 +114,7 @@ public class NacosServiceManager {
 
 	public void nacosServiceShutDown() throws NacosException {
 		if (Objects.nonNull(this.namingService)) {
+			// 通过命名空间服务关闭一些资源服务
 			this.namingService.shutDown();
 			this.namingService = null;
 		}

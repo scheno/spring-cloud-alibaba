@@ -39,6 +39,7 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = "spring.cloud.nacos.config.enabled", matchIfMissing = true)
 public class NacosConfigAutoConfiguration {
 
+	// Nacos 配置属性
 	@Bean
 	@ConditionalOnMissingBean(value = NacosConfigProperties.class, search = SearchStrategy.CURRENT)
 	public NacosConfigProperties nacosConfigProperties(ApplicationContext context) {
@@ -51,17 +52,20 @@ public class NacosConfigAutoConfiguration {
 		return new NacosConfigProperties();
 	}
 
+	// Nacos 刷新历史
 	@Bean
 	public NacosRefreshHistory nacosRefreshHistory() {
 		return new NacosRefreshHistory();
 	}
 
+	// Nacos 配置管理
 	@Bean
 	public NacosConfigManager nacosConfigManager(
 			NacosConfigProperties nacosConfigProperties) {
 		return new NacosConfigManager(nacosConfigProperties);
 	}
 
+	// Nacos 配置刷新
 	@Bean
 	public NacosContextRefresher nacosContextRefresher(
 			NacosConfigManager nacosConfigManager,
